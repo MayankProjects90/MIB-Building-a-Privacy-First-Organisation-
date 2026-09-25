@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Building a Privacy-First Organisation – Mayank Karnawat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Barlow+Semi+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#1E282C; --deep:#03141C; --green:#009945; --forest:#076C28; --lime:#83BB26;
+  --bg:#FFFFFF; --surface:#EEF4EA; --surface-2:#F7FAF5; --ink:#1E282C; --muted:#4F5A5E; --rule:#D5DED2;
+  --accent:#00843C; --on-dark:#FFFFFF; --on-dark-muted:#B9C6C1;
+  --rail:72px;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E171B; --surface:#17252A; --surface-2:#132024; --ink:#EAF0EC; --muted:#A9B7B2; --rule:#2A3A40; --accent:#83BB26;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E171B; --surface:#17252A; --surface-2:#132024; --ink:#EAF0EC; --muted:#A9B7B2; --rule:#2A3A40; --accent:#83BB26;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--lime);outline-offset:3px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Road rail ---------- */
+.rail{position:fixed;left:0;top:0;bottom:0;width:var(--rail);background:var(--asphalt);z-index:20;
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.06)}
+.rail::before,.rail::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.18)}
+.rail::before{left:10px}.rail::after{right:10px}
+.rail .centre{position:absolute;left:50%;top:0;bottom:0;width:4px;transform:translateX(-50%);
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.55) 0 22px,transparent 22px 44px);
+  background-position:0 var(--dash,0px)}
+.rail .travelled{position:absolute;left:50%;top:0;width:4px;transform:translateX(-50%);height:var(--prog,0%);
+  background:var(--lime);box-shadow:0 0 12px rgba(131,187,38,.6)}
+.rail .car{position:absolute;left:50%;top:var(--prog,0%);width:22px;height:34px;margin:-17px 0 0 -11px;border-radius:7px;
+  background:var(--lime);box-shadow:0 0 0 3px var(--asphalt),0 0 18px rgba(131,187,38,.8)}
+.rail .car::before{content:"";position:absolute;left:4px;right:4px;top:6px;height:8px;border-radius:3px;background:var(--asphalt);opacity:.75}
+.rail .car::after{content:"";position:absolute;left:4px;right:4px;bottom:5px;height:5px;border-radius:2px;background:var(--asphalt);opacity:.45}
+.milestone{position:absolute;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;letter-spacing:-.02em;
+  border:2px solid rgba(255,255,255,.45);background:var(--asphalt);color:#fff;font:700 13px/1 var(--display);
+  display:grid;place-items:center;cursor:pointer;padding:0;transition:background .25s,border-color .25s,color .25s}
+.milestone.passed{background:var(--green);border-color:var(--green)}
+.milestone.current{background:var(--lime);border-color:var(--lime);color:var(--deep)}
+.milestone .tip{position:absolute;left:44px;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--deep);color:#fff;
+  font:600 14px/1 var(--body);padding:8px 12px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .2s}
+.milestone:hover .tip,.milestone:focus-visible .tip{opacity:1}
+.mobile-progress{display:none}
+
+main{margin-left:var(--rail)}
+
+/* ---------- Shared ---------- */
+.wrap{max-width:1120px;margin:0 auto;padding:0 clamp(20px,5vw,56px)}
+section.stage{padding:clamp(72px,11vh,120px) 0;position:relative}
+section.stage.alt{background:var(--surface-2)}
+.tag{display:inline-flex;align-items:center;gap:12px;background:var(--green);color:#fff;font:700 16px/1 var(--body);
+  padding:11px 40px 11px clamp(20px,5vw,56px);margin-left:calc(-1 * clamp(20px,5vw,56px));
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,0 100%)}
+.tag b{font:800 20px/1 var(--display)}
+h2{font:700 clamp(34px,5vw,56px)/1.05 var(--display);letter-spacing:-.01em;margin:26px 0 14px;max-width:22ch}
+.lede{color:var(--muted);font-size:clamp(18px,2vw,21px);max-width:62ch;margin:0 0 44px}
+h3{font:700 22px/1.2 var(--display);margin:0 0 8px}
+p{margin:0 0 12px}
+.small{font-size:15px;color:var(--muted)}
+
+/* chevron flows */
+.flow{display:flex;gap:0;margin:0;padding:0}
+.flow li{list-style:none;flex:1;position:relative;min-height:62px;display:flex;flex-direction:column;justify-content:center;
+  padding:10px 20px 10px 38px;margin-left:-10px;color:#fff;background:var(--asphalt);
+  clip-path:polygon(0 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,0 100%,20px 50%);
+  transition:background .5s ease, color .5s ease}
+.flow li:first-child{margin-left:0;padding-left:20px;clip-path:polygon(0 0,calc(100% - 20px) 0,100% 50%,calc(100% - 20px) 100%,0 100%)}
+.flow li strong{font:700 17px/1.2 var(--display)}
+.flow li span{font-size:14px;opacity:.85;line-height:1.3}
+.flow.lit li:nth-child(1){background:var(--asphalt)}
+.flow.armed li{background:#3a474c}
+.flow.lit li:nth-child(2){background:var(--forest);transition-delay:.15s}
+.flow.lit li:nth-child(3){background:var(--green);transition-delay:.3s}
+.flow.lit li:nth-child(4){background:#56A52C;transition-delay:.45s}
+.flow.lit li:nth-child(5){background:var(--lime);color:var(--deep);transition-delay:.6s}
+.flow.lit li:nth-child(6){background:#9ACB45;color:var(--deep);transition-delay:.75s}
+.flow.lit li:nth-child(7){background:#B4D873;color:var(--deep);transition-delay:.9s}
+.flow.four.lit li:nth-child(4){background:var(--lime);color:var(--deep)}
+.flow-label{font:600 15px/1 var(--body);color:var(--muted);margin:40px 0 12px}
+
+/* ---------- Hero ---------- */
+.hero{min-height:100vh;min-height:100svh;background:var(--deep);color:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(90% 70% at 100% 100%,rgba(62,154,44,.75),transparent 60%),
+  linear-gradient(135deg,#0E1A24 0%,#0B2E2A 45%,#0A5A36 85%);}
+.hero .streaks{position:absolute;inset:0;opacity:.5}
+.hero .wrap{position:relative;z-index:2;width:100%}
+.hero .logo{position:absolute;top:calc(28px + env(safe-area-inset-top,0px));right:clamp(20px,5vw,56px);width:clamp(110px,14vw,170px);z-index:3}
+.hero h1{font:800 clamp(44px,7.5vw,96px)/.98 var(--display);letter-spacing:-.015em;margin:0 0 28px;max-width:13ch}
+.hero .ribbon{display:inline-block;background:var(--green);font:600 clamp(17px,2vw,22px)/1.3 var(--body);
+  padding:14px 56px 14px clamp(20px,5vw,56px);margin-left:calc(-1 * clamp(20px,5vw,56px));
+  clip-path:polygon(0 0,calc(100% - 26px) 0,100% 50%,calc(100% - 26px) 100%,0 100%)}
+.hero .who{margin-top:34px;font-size:17px;color:var(--on-dark-muted);max-width:60ch}
+.hero .who strong{display:block;color:#fff;font-size:21px}
+.hero .who .certs{color:var(--lime);font-weight:600;display:block;margin:2px 0 10px}
+.hero .cue{position:absolute;top:calc(40px + env(safe-area-inset-top,0px));left:clamp(20px,5vw,56px);z-index:3;font-size:14px;color:var(--on-dark-muted);display:flex;gap:10px;align-items:center}
+kbd{font:600 13px/1 var(--body);border:1px solid currentColor;border-radius:4px;padding:4px 7px}
+
+/* ---------- Pillars ---------- */
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.pillar{background:var(--surface);display:flex;flex-direction:column}
+.pillar header{background:var(--asphalt);color:#fff;display:flex;align-items:center;gap:14px;padding:18px 18px;min-height:112px}
+.pillar .num{font:800 76px/.8 var(--display);color:transparent;-webkit-text-stroke:1.6px var(--lime)}
+.pillar header h3{margin:0;font-size:20px}
+.pillar .body{padding:18px 20px 22px}
+.pillar .body em{display:block;font-style:normal;font-weight:700;color:var(--accent);font-size:15px;margin-bottom:6px}
+.pillar .body p{font-size:16.5px;margin:0}
+
+/* ---------- Year one ---------- */
+.phases{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:22px}
+.phases ul{margin:0;padding-left:20px}
+.phases li{margin-bottom:8px;font-size:17px}
+.lenses{margin-top:48px;background:var(--asphalt);color:#fff;padding:30px clamp(20px,3vw,36px)}
+.lenses h3{color:var(--lime)}
+.lens-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 16px}
+.lens{background:#2E3B40;border:0;color:#fff;font:600 16px/1.25 var(--body);padding:16px 12px;border-radius:6px;cursor:pointer;text-align:left;transition:background .2s}
+.lens[aria-pressed="true"]{background:var(--lime);color:var(--deep)}
+.lens-detail{min-height:52px;color:var(--on-dark-muted);font-size:16.5px;max-width:78ch}
+.lens-detail strong{color:#fff}
+
+/* ---------- Relationships ---------- */
+.rel{width:100%;border-collapse:collapse}
+.rel th{text-align:left;font:600 15px/1.2 var(--body);color:var(--accent);padding:0 18px 12px}
+.rel td{padding:16px 18px;vertical-align:middle;font-size:17px;border-top:6px solid var(--bg)}
+.rel tbody tr td{background:var(--surface)}
+.rel td:first-child{background:var(--asphalt);color:#fff;font:700 18px/1.2 var(--display);width:27%}
+.rel td:first-child .ico{display:inline-grid;place-items:center;width:30px;height:30px;margin-right:10px;vertical-align:middle}
+.rel .you{display:inline-block;margin-left:8px;font:600 12px/1 var(--body);color:var(--deep);background:var(--lime);padding:4px 7px;border-radius:3px;vertical-align:middle}
+
+/* ---------- Governance ---------- */
+.law{font-size:17px;color:var(--muted);margin:0 0 32px;max-width:70ch}
+.law strong{color:var(--ink)}
+.gov-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:24px;margin-top:28px}
+.box{background:var(--surface);padding:26px 28px}
+.box dl{margin:0}
+.box dt{font-weight:700;margin-top:12px}
+.box dt:first-child{margin-top:0}
+.box dd{margin:2px 0 0;color:var(--muted);font-size:16.5px}
+.dash{background:var(--deep);color:#fff;padding:22px;border-radius:10px}
+.dash-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.dash-head h3{margin:0;font-size:19px}
+.dash-head span{font-size:13px;color:var(--on-dark-muted)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#15262C;border-radius:6px;padding:14px 14px 12px;position:relative}
+.tile h4{margin:0 0 3px;font:700 16px/1.2 var(--display)}
+.tile p{margin:0;font-size:13.5px;color:var(--on-dark-muted)}
+.tile .rag{position:absolute;top:14px;right:14px;width:11px;height:11px;border-radius:50%}
+.tile .trend{display:block;margin-top:10px;height:26px;width:100%}
+.tile .trend polyline{fill:none;stroke:var(--lime);stroke-width:2}
+.rag.g{background:#3FB950}.rag.a{background:#F9B233}.rag.r{background:#E5484D}
+.dash-foot{font-size:13px;color:var(--on-dark-muted);margin-top:12px}
+
+/* ---------- Innovation ---------- */
+.inno{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s;position:relative}
+.steps::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:2px;background:var(--rule)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:16px;padding:10px 0;position:relative}
+.steps li::before{content:counter(s);width:44px;height:44px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font:700 19px/1 var(--display);transition:background .25s,transform .25s;z-index:1}
+.steps li.hot::before{background:var(--lime);color:var(--deep);transform:scale(1.12)}
+.steps li:nth-child(even)::before{background:var(--forest)}
+.steps li.hot:nth-child(even)::before{background:var(--lime)}
+.steps strong{display:block;font:700 20px/1.2 var(--display)}
+.steps span{color:var(--muted);font-size:16.5px}
+.agenda-title{font-weight:600;color:var(--accent);font-size:15px;margin-bottom:10px}
+.agenda button{width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;text-align:left;background:var(--surface);border:0;
+  color:var(--ink);font:700 18px/1.25 var(--display);padding:16px 18px;margin-bottom:0;cursor:pointer;border-radius:4px;transition:background .2s}
+.agenda button::after{content:"+";font:600 22px/1 var(--body);color:var(--accent);transition:transform .25s}
+.agenda button[aria-expanded="true"]{background:var(--asphalt);color:#fff;margin-bottom:0;border-radius:4px 4px 0 0}
+.agenda button[aria-expanded="true"]::after{transform:rotate(45deg);color:var(--lime)}
+.agenda .panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease;margin-bottom:8px}
+.agenda .panel>div{overflow:hidden}
+.agenda .panel.open{grid-template-rows:1fr}
+.agenda .panel p{background:var(--asphalt);color:var(--on-dark-muted);margin:0;padding:0 18px 16px;font-size:16.5px;border-radius:0 0 4px 4px}
+.agenda .panel p strong{color:var(--lime);font-weight:600}
+.question{margin-top:56px;background:var(--asphalt);color:#fff;padding:28px clamp(20px,3vw,36px);font:500 clamp(20px,2.4vw,26px)/1.35 var(--body);font-style:italic}
+.question span{color:var(--lime);font-weight:700}
+
+/* ---------- Risk ---------- */
+.risk{display:grid;grid-template-columns:1.9fr 1fr;gap:24px}
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.case{background:var(--surface);padding:22px}
+.case svg{width:28px;height:28px;color:var(--accent);margin-bottom:8px}
+.case p{font-size:16px;color:var(--muted);margin:0}
+.register{margin-top:24px;font-size:16.5px;color:var(--muted)}
+.register strong{color:var(--ink)}
+.ico-panel{background:var(--asphalt);color:#fff;padding:28px}
+.ico-panel h3{color:var(--lime);font-size:20px;margin-bottom:16px}
+.ico-panel dt{font-weight:700;margin-top:14px}
+.ico-panel dd{margin:2px 0 0;color:var(--on-dark-muted);font-size:16px}
+
+/* ---------- Leadership ---------- */
+.lead{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.lead article{background:var(--surface);padding:24px}
+.lead .badge{width:46px;height:46px;border-radius:50%;background:var(--asphalt);display:grid;place-items:center;margin-bottom:14px}
+.lead .badge svg{width:22px;height:22px;color:var(--lime)}
+.lead ul{margin:0;padding-left:20px}
+.lead li{font-size:16.5px;margin-bottom:6px}
+.flow.ladder li{min-height:50px}
+.flow.ladder li strong{font-size:15.5px}
+.quote{margin:40px 0 0;font:600 clamp(22px,2.8vw,30px)/1.3 var(--display);color:var(--accent);max-width:36ch}
+
+/* ---------- Close ---------- */
+.close{background:var(--deep);color:#fff;position:relative;overflow:hidden}
+.close::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 80% at 100% 100%,rgba(62,154,44,.6),transparent 60%),linear-gradient(135deg,#0E1A24,#0B2E2A 50%,#0A5A36)}
+.close .wrap{position:relative}
+.close h2{color:#fff}
+.outcomes{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:10px}
+.outcome{border:1px solid rgba(131,187,38,.7);background:rgba(3,20,28,.55);padding:20px 18px}
+.outcome svg{width:30px;height:30px;color:var(--lime);margin-bottom:10px}
+.outcome h3{font-size:19px;color:#fff}
+.outcome p{font-size:15.5px;color:var(--on-dark-muted);margin:0}
+.finale{font:600 clamp(26px,3.6vw,42px)/1.2 var(--display);margin:64px auto 8px;max-width:30ch;text-align:center}
+.finale span{color:var(--lime)}
+.thanks{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;color:var(--on-dark-muted)}
+.thanks strong{color:#fff;font-size:20px}
+.close .logo{position:absolute;top:0;right:clamp(20px,5vw,56px);width:clamp(100px,11vw,140px)}
+
+/* ---------- Controls ---------- */
+.controls{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;gap:8px}
+.controls button{background:var(--deep);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;font:600 14px/1 var(--body);padding:10px 13px;cursor:pointer}
+.controls button:hover{background:var(--green)}
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px){
+  .pillars{grid-template-columns:1fr 1fr}
+  .lens-row{grid-template-columns:repeat(3,1fr)}
+  .gov-grid,.inno,.risk{grid-template-columns:1fr}
+  .outcomes{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:720px){
+  :root{--rail:0px}
+  .rail{display:none}
+  .mobile-progress{display:block;position:fixed;top:0;left:0;height:calc(4px + env(safe-area-inset-top,0px));width:var(--prog,0%);background:var(--lime);z-index:40}
+  body{font-size:17px}
+  .pillars,.phases,.cases,.lead,.outcomes{grid-template-columns:1fr}
+  .lens-row{grid-template-columns:1fr 1fr}
+  .flow{flex-direction:column;gap:6px}
+  .flow li,.flow li:first-child{margin-left:0;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),50% 100%,0 calc(100% - 10px));padding:12px 18px 20px}
+  .rel thead{display:none}
+  .rel tr{display:block;margin-bottom:12px}
+  .rel td{display:block;width:auto!important;border-top:0}
+  .rel td:nth-child(2)::before{content:"What they need";display:block;font-size:13px;font-weight:600;color:var(--accent)}
+  .rel td:nth-child(3)::before{content:"How I'll earn it";display:block;font-size:13px;font-weight:600;color:var(--accent)}
+  .tiles{grid-template-columns:1fr}
+  .controls .hint{display:none}
+  .hero .cue{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .flow li,.agenda .panel,.steps li::before{transition:none!important}
+}
+@media print{
+  .rail,.controls,.mobile-progress{display:none}
+  main{margin-left:0}
+  .flow li{background:var(--asphalt)!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="mobile-progress" aria-hidden="true"></div>
+<nav class="rail" aria-label="Presentation sections">
+  <div class="centre"></div>
+  <div class="travelled"></div>
+  <div class="car" aria-hidden="true"></div>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<header class="hero" id="start" data-label="Start">
+  <div class="logo" role="img" aria-label="MIB logo"><svg viewBox="0 0 244 145" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Layer_1" overflow="hidden"><g><g><path d="M29 52.9C29.2 51.9 29.5 50.9 29.9 50 30.3 49.1 30.7 48.2 31.2 47.3 31.7 46.4 32.2 45.6 32.8 44.8 33.2 44.3 33.6 43.7 34 43.2 34.7 42.5 35.4 42.7 35.4 42.7L53 47C53 47 54 47.4 53.4 48.6 53.1 49.2 52.8 50.1 52.7 50.7 52.5 51.3 52.4 52 52.3 52.6 52.2 53.3 52.1 53.9 52.1 54.6 52 57.5 52.6 60.5 53.8 63.5 55.1 66.7 57.1 69.8 59.8 73 61.4 74.8 64.2 76.8 66.2 78.6 67 79.3 67.1 80.4 67.1 81.2L67.1 100.9C67.1 101.8 65.7 102.2 64.8 101.8 64.1 101.4 63.2 101 62.6 100.6 56.3 97 50.8 93.1 46 88.9 41.4 84.8 37.5 80.6 34.7 76.3 31.9 72.1 30.1 68 29.2 63.9 28.8 61.9 28.5 60 28.5 58.1 28.5 56.2 28.7 54.4 29.1 52.7Z" id="Path" fill="#009945"/><path d="M156 51.6C155.3 51.1 154.9 50.9 154.1 50.4 152.8 49.5 151.5 48.7 150.2 47.9 148.9 47.1 147.5 46.3 146.1 45.5 144.7 44.7 143.3 44 141.9 43.3 139.4 42 136.8 40.8 134.1 39.7 131.4 38.5 128.7 37.5 125.8 36.5 123 35.5 120 34.5 117 33.7 114.2 32.9 111.3 32.1 108.3 31.5 108.1 31.5 107.8 31.6 108 31.9 108.1 32.2 109.7 35.2 110 35.7 110.2 36 110.5 36.3 111.2 36.4 115 37.2 118.4 38.2 121.9 39.3 125.6 40.5 129.1 41.8 132.5 43.3 135.9 44.8 139.2 46.4 142.2 48.2 144.8 49.7 148 51.3 151.6 53.8 151.6 53.8 152.4 54.4 153.4 54 153.8 53.8 155.6 52.8 155.9 52.7 156.5 52.3 156 51.8 156 51.8L156 51.8Z" id="Path1" fill="#009945"/></g><path d="M54.9 31C53.1 31.5 51.4 32.1 49.8 32.7 48.1 33.3 46.5 34 45 34.8 43.7 35.4 42.5 36.1 41.4 36.8 40.7 37.5 42 37.7 42 37.7 42 37.7 57.3 41.7 58 41.8 58.6 42 59.1 41.7 59.3 41.5 61.6 39.7 64.4 38.2 67.5 37 70.7 35.8 74.3 34.9 78.1 34.3 81.7 33.8 85.6 33.5 89.7 33.5 93.3 33.5 97.1 33.8 101 34.3 101.3 34.3 101.8 34.3 101.5 33.6 101.2 32.9 100.1 30.4 99.9 30.1 99.7 29.7 99.5 29.5 98.9 29.4 95.8 28.9 92.7 28.5 89.7 28.3 86.3 28 83 27.9 79.8 27.8 76.4 27.8 73.2 27.9 70 28.2 69.3 28.2 68.6 28.3 67.9 28.4 65.3 28.7 62.8 29.1 60.4 29.6 58.6 30 56.8 30.4 55.1 30.9Z" id="Fill-1" fill="#83BB26"/><g><path d="M117.5 65.1C114.5 65.1 110.1 66.6 108.6 69.6 107.1 66.6 102.7 65.1 99.7 65.1L89.3 65.1C80.4 65.1 74.4 71 74.4 81.4L74.4 111.1C74.4 115.6 77.5 117 80.3 117 83.1 117 86.2 115.5 86.2 111.1L86.2 81.4C86.2 79.9 86.2 76.9 89.2 76.9L99.6 76.9C102.6 76.9 102.6 79.9 102.6 81.4L102.6 111.1C102.6 115.6 105.6 117 108.5 117 111.4 117 114.4 115.5 114.4 111.1L114.4 81.4C114.4 79.9 114.4 76.9 117.4 76.9L127.8 76.9C130.8 76.9 130.8 79.9 130.8 81.4L130.8 111.1C130.8 115.6 133.8 117 136.9 117 140 117 142.7 115.5 142.7 111.1L142.7 81.4C142.7 69.5 136.8 65.1 127.8 65.1L117.4 65.1Z" id="Path2" fill="#FFFFFF"/><path d="M200.7 65.1 191.8 65.1C188.8 65.1 187.3 66.6 187.3 66.6L187.3 47.3C187.3 44.3 185.8 44.3 184.3 45 182.8 45.8 178.3 48 176.9 48.8 175.4 49.7 175.4 50.2 175.4 51.7L175.4 111.1C175.4 115.6 178.2 117 181.2 117 184.2 117 185.8 114 185.8 114 187.3 115.5 188.9 117 191.7 117L200.6 117C210.3 117 215.5 112.3 215.5 102.1L215.5 78.3C215.5 67.9 209.6 64.9 200.6 64.9ZM203.7 100.7C203.7 103.7 202.2 105.2 199.2 105.2L191.8 105.2C188.8 105.2 187.3 103.7 187.3 100.7L187.3 81.4C187.3 78.4 188.8 76.9 191.8 76.9L199.2 76.9C202.2 76.9 203.7 78.4 203.7 81.4L203.7 100.7Z" fill="#FFFFFF"/><path d="M165.1 61.8C165.1 58.8 163.6 58.8 162.1 59.5 160.6 60.3 156.1 62.5 154.7 63.3 153.2 64.2 153.2 64.7 153.2 66.2 153.2 67.7 153.2 111.3 153.2 111.1 153.2 115.6 156.3 117 159.3 117 162.3 117 165.1 115.5 165.1 111.1L165.1 61.8Z" fill="#FFFFFF"/></g></g></svg></div>
+  <svg class="streaks" viewBox="0 0 1600 900" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="#83BB26" stop-opacity="0"/><stop offset="1" stop-color="#83BB26" stop-opacity=".45"/></linearGradient></defs>
+    <g stroke="url(#st)" fill="none">
+      <path d="M700 -20 C 1100 200 1350 450 1620 620" stroke-width="1.5"/>
+      <path d="M760 -20 C 1150 220 1380 500 1620 700" stroke-width="2.5"/>
+      <path d="M840 -20 C 1200 260 1420 540 1620 780" stroke-width="1"/>
+      <path d="M920 -20 C 1260 300 1460 600 1620 860" stroke-width="2"/>
+      <path d="M1000 -20 C 1320 320 1500 660 1620 930" stroke-width="1"/>
+    </g>
+  </svg>
+  <div class="wrap">
+    <h1>Building a Privacy-First Organisation</h1>
+    <div class="ribbon">Enabling innovation while managing data protection risk</div>
+    <p class="who"><strong>Mayank Karnawat</strong><span class="certs">CIPP/E, CIPM, AIGP, FIP</span></p>
+  </div>
+  <div class="cue">Step through with <kbd>←</kbd> <kbd>→</kbd></div>
+</header>
+
+<!-- STARTING POINT -->
+<section class="stage" id="strategy" data-label="Our starting point" data-short="A">
+  <div class="wrap">
+    <div class="tag">Our starting point</div>
+    <h2>Privacy must enable Accelerating to Zero</h2>
+    <p class="lede">Start with MIB’s strategy, then design privacy around the outcomes it is trying to deliver.</p>
+    <div class="pillars">
+      <article class="pillar"><header><span class="num">1</span><h3>End uninsured driving for good</h3></header>
+        <div class="body"><em>Privacy must get right</em><p>Insight, targeting and enforcement built on lawful, fair and transparent profiling. Extra care with young audiences and PECR.</p></div></article>
+      <article class="pillar"><header><span class="num">2</span><h3>Help people rebuild their lives</h3></header>
+        <div class="body"><em>Privacy must get right</em><p>Injury, health and financial data for 35,000 people a year. Article 9 safeguards and human judgement in automated claims.</p></div></article>
+      <article class="pillar"><header><span class="num">3</span><h3>Data drives the good we do</h3></header>
+        <div class="body"><em>Privacy must get right</em><p>Navigate feeds and real-time council checks depend on accuracy, lineage, clear sharing agreements and security.</p></div></article>
+      <article class="pillar"><header><span class="num">4</span><h3>Connected and self-driving vehicles</h3></header>
+        <div class="body"><em>Privacy must get right</em><p>Vehicle and location data from manufacturers: necessity, minimisation, clear controllership and secure sharing.</p></div></article>
+    </div>
+    <p class="flow-label">My principle as DPO</p>
+    <ol class="flow four">
+      <li><strong>Understand the objective</strong></li>
+      <li><strong>Identify the genuine risk</strong></li>
+      <li><strong>Build proportionate controls</strong></li>
+      <li><strong>Escalate only what matters</strong></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 1 YEAR ONE -->
+<section class="stage alt" id="priorities" data-label="First-year priorities" data-short="1">
+  <div class="wrap">
+    <div class="tag"><b>1</b> First-year priorities</div>
+    <h2>Understand, assess, prioritise, embed</h2>
+    <p class="lede">Maturity isn’t whether a policy exists. It’s whether leaders own it, people follow it and controls work.</p>
+    <ol class="flow three">
+      <li><strong>0–90 days</strong><span>Understand</span></li>
+      <li><strong>3–6 months</strong><span>Assess and prioritise</span></li>
+      <li><strong>6–12 months</strong><span>Build and embed</span></li>
+    </ol>
+    <div class="phases">
+      <ul><li>Meet the team and key leaders across Risk, Data Strategy, Claims, Technology, Legal and InfoSec</li><li>Map data ecosystems and the change pipeline</li><li>Surface urgent risks and quick wins</li></ul>
+      <ul><li>Baseline against the ICO Accountability Framework</li><li>Test key controls, not just documents</li><li>Separate urgent remediation from the longer-term roadmap</li></ul>
+      <ul><li>Strengthen DPIA, DSAR, AI and data-governance controls</li><li>Board MI and KRIs live</li><li>Evidence-led 2027 plan agreed</li></ul>
+    </div>
+    <div class="lenses">
+      <h3>How I’ll assess maturity: five lenses</h3>
+      <div class="lens-row" role="group" aria-label="Maturity lenses">
+        <button class="lens" aria-pressed="true" data-d="<strong>Leadership and culture.</strong> Do senior leaders own privacy risk, and do people raise issues early? I’ll test this through leadership interviews and how escalations have actually been handled.">Leadership and culture</button>
+        <button class="lens" aria-pressed="false" data-d="<strong>Risk and control effectiveness.</strong> Are privacy risks in the register and RCSA, and do the controls work when sampled? Evidence beats attestation.">Risk and control effectiveness</button>
+        <button class="lens" aria-pressed="false" data-d="<strong>Data lifecycle and governance.</strong> Is the ROPA live, is data accurate, is access restricted and does retention really delete? I’ll walk through key data flows such as Navigate and claims.">Data lifecycle and governance</button>
+        <button class="lens" aria-pressed="false" data-d="<strong>Rights, incidents and change.</strong> DSAR timeliness and quality, breach handling and root causes, and whether DPIAs happen early enough to shape design.">Rights, incidents and change</button>
+        <button class="lens" aria-pressed="false" data-d="<strong>MI, assurance and tooling.</strong> Does the Board get decision-useful reporting, is there independent assurance, and do our tools support the work or slow it down?">MI, assurance and tooling</button>
+      </div>
+      <p class="lens-detail" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 1b RELATIONSHIPS -->
+<section class="stage" id="relationships" data-label="Credibility and relationships" data-short="1b">
+  <div class="wrap">
+    <div class="tag"><b>1</b> First-year priorities</div>
+    <h2>Earn credibility before spending it</h2>
+    <p class="lede">Credibility comes from being useful early, consistent under pressure and honest about risk.</p>
+    <table class="rel">
+      <thead><tr><th></th><th>What they need from me</th><th>How I’ll earn it</th></tr></thead>
+      <tbody>
+        <tr><td>Board and ExCo</td><td>A clear view of material risk, with no surprises</td><td>Short, decision-useful reporting and early warning on emerging issues</td></tr>
+        <tr><td>Chief Risk Officer and Risk</td><td>Privacy risk aligned to enterprise risk appetite</td><td>Privacy risks and controls in RCSA, KRIs with thresholds, joint deep-dives</td></tr>
+        <tr><td>Head of Data Strategy</td><td>A partner, not a blocker, for the data agenda</td><td>Co-own the data governance framework and support the Data Working Group</td></tr>
+        <tr><td>Claims, Technology and change teams</td><td>Fast, practical answers</td><td>Proportionate triage, reusable guardrails and named privacy partners</td></tr>
+        <tr><td>ICO and regulators</td><td>Openness and evidence</td><td>Proactive engagement, candid self-reporting and credible remediation</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 2 GOVERNANCE -->
+<section class="stage alt" id="governance" data-label="Governance, compliance and assurance" data-short="2">
+  <div class="wrap">
+    <div class="tag"><b>2</b> Governance, compliance and assurance</div>
+    <h2>Business owns. Privacy challenges. The Board sees.</h2>
+    <p class="law"><strong>Legal framework:</strong> UK GDPR, DPA 2018, PECR, the Data (Use and Access) Act 2025, ICO guidance, and MIB’s scheme and contractual obligations.</p>
+    <ol class="flow four">
+      <li><strong>Business owns</strong><span>1st line: purpose, risk, controls</span></li>
+      <li><strong>Privacy advises</strong><span>2nd line: DPO challenge</span></li>
+      <li><strong>Assurance tests</strong><span>Monitoring and internal audit</span></li>
+      <li><strong>Board sees</strong><span>Material and residual risk</span></li>
+    </ol>
+    <div class="gov-grid">
+      <div class="box">
+        <h3>Structures, policies and controls</h3>
+        <dl>
+          <dt>Forums</dt><dd>The DPO sits on data governance, risk and change boards, with a direct line to the Board.</dd>
+          <dt>Policies</dt><dd>Policy, then standards, then procedures, each with a named owner and annual review.</dd>
+          <dt>Controls</dt><dd>Privacy controls embedded in RCSA, tested and evidenced.</dd>
+          <dt>Records</dt><dd>ROPA, DPIA register, sharing agreements and retention schedule kept live.</dd>
+          <dt>Reporting</dt><dd>Quarterly to the Risk Committee, and an annual DPO report to the Board.</dd>
+        </dl>
+      </div>
+      <div class="dash" aria-label="Illustrative Board dashboard">
+        <div class="dash-head"><h3>Board and ExCo dashboard</h3><span>Illustrative</span></div>
+        <div class="tiles">
+          <div class="tile"><i class="rag g" aria-label="Green"></i><h4>Incidents and breaches</h4><p>Severity, repeat causes</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,8 20,12 40,10 60,16 80,18 100,21"/></svg></div>
+          <div class="tile"><i class="rag a" aria-label="Amber"></i><h4>High-risk change</h4><p>DPIAs, AI, overdue actions</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,18 20,14 40,15 60,10 80,9 100,7"/></svg></div>
+          <div class="tile"><i class="rag g" aria-label="Green"></i><h4>Rights and complaints</h4><p>Timeliness, themes</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,12 20,11 40,13 60,12 80,14 100,15"/></svg></div>
+          <div class="tile"><i class="rag a" aria-label="Amber"></i><h4>Third parties</h4><p>Assurance, data sharing</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,14 20,16 40,12 60,13 80,11 100,12"/></svg></div>
+          <div class="tile"><i class="rag g" aria-label="Green"></i><h4>Control effectiveness</h4><p>Test results, residual risk</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,20 20,18 40,15 60,12 80,9 100,6"/></svg></div>
+          <div class="tile"><i class="rag a" aria-label="Amber"></i><h4>Regulatory horizon</h4><p>Exposure, upcoming change</p><svg class="trend" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true"><polyline points="0,16 20,15 40,12 60,11 80,8 100,5"/></svg></div>
+        </div>
+        <p class="dash-foot">RAG against agreed risk-appetite thresholds, showing trends rather than snapshots.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 INNOVATION -->
+<section class="stage" id="innovation" data-label="Enabling innovation and change" data-short="3">
+  <div class="wrap">
+    <div class="tag"><b>3</b> Enabling innovation and change</div>
+    <h2>Make the safe route the easy route</h2>
+    <p class="lede">Early engagement, simple governance and proportionate triage add up to faster, safer change.</p>
+    <div class="inno">
+      <ol class="steps">
+        <li data-step="1"><div><strong>Triage</strong><span>Low, medium or high risk, so effort goes where it matters</span></div></li>
+        <li data-step="2"><div><strong>Assess once</strong><span>One route covering DPIA, AI and data-sharing questions</span></div></li>
+        <li data-step="3"><div><strong>Design</strong><span>Minimise, secure, explain, keep human oversight</span></div></li>
+        <li data-step="4"><div><strong>Decide</strong><span>Mitigate, accept within appetite, or escalate</span></div></li>
+        <li data-step="5"><div><strong>Monitor</strong><span>Control drift, incidents, lessons learned</span></div></li>
+      </ol>
+      <div class="agenda">
+        <p class="agenda-title">Applied to MIB’s 2026 agenda. Select one to see the privacy focus.</p>
+        <button aria-expanded="false" data-steps="2,3,5">Real-time council checks</button>
+        <div class="panel"><div><p><strong>Focus:</strong> accuracy, purpose limits and a full audit trail, so a council never refuses a licence on stale or wrong data.</p></div></div>
+        <button aria-expanded="false" data-steps="2,3">Navigate direct insurer feeds</button>
+        <div class="panel"><div><p><strong>Focus:</strong> lineage, security and clear sharing agreements with every insurer sending data in real time.</p></div></div>
+        <button aria-expanded="false" data-steps="1,2,3,4">Claims automation and AI</button>
+        <div class="panel"><div><p><strong>Focus:</strong> health data under Article 9, Article 22 safeguards, meaningful human review and fairness testing.</p></div></div>
+        <button aria-expanded="false" data-steps="1,3,4">Connected vehicle data</button>
+        <div class="panel"><div><p><strong>Focus:</strong> necessity, minimisation and clear controllership before any manufacturer data flows.</p></div></div>
+        <button aria-expanded="false" data-steps="2,3,5">Insight programme and campaigns</button>
+        <div class="panel"><div><p><strong>Focus:</strong> transparent profiling, PECR compliance, and extra care where campaigns reach young people.</p></div></div>
+      </div>
+    </div>
+    <p class="question">My default question isn’t “can we?” <span>It’s “what’s the safest proportionate way to achieve this?”</span></p>
+  </div>
+</section>
+
+<!-- 4 RISK -->
+<section class="stage alt" id="risk" data-label="Risk management and regulators" data-short="4">
+  <div class="wrap">
+    <div class="tag"><b>4</b> Risk management and regulators</div>
+    <h2>Make bad news travel fast</h2>
+    <p class="lede">A speak-up culture gives MIB time to contain harm, make defensible decisions and engage transparently.</p>
+    <div class="risk">
+      <div>
+        <div class="cases">
+          <div class="case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg><h3>Breaches</h3><p>Early escalation, a risk-of-harm assessment, a documented 72-hour ICO decision and root-cause fixes.</p></div>
+          <div class="case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6"/><path d="m16 11 2 2 4-4"/></svg><h3>Complex DSARs</h3><p>Triage and scope early, apply exemptions such as crime and fraud prevention carefully, and quality-assure redaction.</p></div>
+          <div class="case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><h3>Investigations</h3><p>A single point of contact, evidence packs, Board visibility and remediation tracked to closure.</p></div>
+        </div>
+        <p class="flow-label">Consistent response playbook</p>
+        <ol class="flow">
+          <li><strong>Triage</strong></li><li><strong>Contain</strong></li><li><strong>Decide</strong></li><li><strong>Notify</strong></li><li><strong>Learn</strong></li>
+        </ol>
+        <p class="register"><strong>Priority risk register:</strong> sensitive and criminal-offence data, profiling and automation, data quality and access, sharing and third parties.</p>
+      </div>
+      <aside class="ico-panel">
+        <h3>A constructive ICO relationship</h3>
+        <dl>
+          <dt>No surprises</dt><dd>Early contact on material issues.</dd>
+          <dt>Evidence-led</dt><dd>Explain our judgement and show remediation.</dd>
+          <dt>Forward-looking</dt><dd>Engage early on AI and connected-vehicle questions.</dd>
+          <dt>Joined-up</dt><dd>Align with DfT, police partners and members where data issues cross over.</dd>
+        </dl>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- 5 LEADERSHIP -->
+<section class="stage" id="leadership" data-label="Leadership and culture" data-short="5">
+  <div class="wrap">
+    <div class="tag"><b>5</b> Leadership and culture</div>
+    <h2>Trusted partner, independent voice</h2>
+    <p class="lede">Privacy culture is strongest when people involve the DPO because they value the advice, not because a process forces them to.</p>
+    <div class="lead">
+      <article><div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3.5 2.7-6 6-6s6 2.5 6 6M14 20c0-2.5 1.3-4.5 3-4.5s4 1.5 4 4.5"/></svg></div>
+        <h3>Privacy culture</h3><ul><li>Leadership tone set from ExCo</li><li>Privacy champions in every directorate</li><li>Role-based training for claims, data teams and executives</li><li>Early escalation feels safe</li></ul></article>
+      <article><div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+        <h3>High-performing function</h3><ul><li>Clear domain ownership across the team</li><li>Senior people coach and grow others</li><li>Regular feedback, not annual surprises</li><li>Capability built beyond the team, so the DPO isn’t the bottleneck</li></ul></article>
+      <article><div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/></svg></div>
+        <h3>Independence in practice</h3><ul><li>Direct access to the Board and Risk Committee</li><li>Challenge documented and escalated when needed</li><li>No conflicting operational ownership</li><li>Close enough to understand, independent enough to challenge</li></ul></article>
+    </div>
+    <p class="flow-label">How I influence and challenge</p>
+    <ol class="flow ladder">
+      <li><strong>Understand</strong></li><li><strong>Advise</strong></li><li><strong>Find a way</strong></li><li><strong>Challenge</strong></li><li><strong>Accept risk</strong></li><li><strong>Escalate</strong></li><li><strong>Assure</strong></li>
+    </ol>
+    <p class="quote">“I rarely want to say no. When I do, it should carry weight because the risk is genuinely material.”</p>
+  </div>
+</section>
+
+<!-- CLOSE -->
+<section class="stage close" id="close" data-label="Twelve months later" data-short="✓">
+  <div class="wrap">
+    <div class="logo" role="img" aria-label="MIB logo"><svg viewBox="0 0 244 145" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Layer_1" overflow="hidden"><g><g><path d="M29 52.9C29.2 51.9 29.5 50.9 29.9 50 30.3 49.1 30.7 48.2 31.2 47.3 31.7 46.4 32.2 45.6 32.8 44.8 33.2 44.3 33.6 43.7 34 43.2 34.7 42.5 35.4 42.7 35.4 42.7L53 47C53 47 54 47.4 53.4 48.6 53.1 49.2 52.8 50.1 52.7 50.7 52.5 51.3 52.4 52 52.3 52.6 52.2 53.3 52.1 53.9 52.1 54.6 52 57.5 52.6 60.5 53.8 63.5 55.1 66.7 57.1 69.8 59.8 73 61.4 74.8 64.2 76.8 66.2 78.6 67 79.3 67.1 80.4 67.1 81.2L67.1 100.9C67.1 101.8 65.7 102.2 64.8 101.8 64.1 101.4 63.2 101 62.6 100.6 56.3 97 50.8 93.1 46 88.9 41.4 84.8 37.5 80.6 34.7 76.3 31.9 72.1 30.1 68 29.2 63.9 28.8 61.9 28.5 60 28.5 58.1 28.5 56.2 28.7 54.4 29.1 52.7Z" id="Path" fill="#009945"/><path d="M156 51.6C155.3 51.1 154.9 50.9 154.1 50.4 152.8 49.5 151.5 48.7 150.2 47.9 148.9 47.1 147.5 46.3 146.1 45.5 144.7 44.7 143.3 44 141.9 43.3 139.4 42 136.8 40.8 134.1 39.7 131.4 38.5 128.7 37.5 125.8 36.5 123 35.5 120 34.5 117 33.7 114.2 32.9 111.3 32.1 108.3 31.5 108.1 31.5 107.8 31.6 108 31.9 108.1 32.2 109.7 35.2 110 35.7 110.2 36 110.5 36.3 111.2 36.4 115 37.2 118.4 38.2 121.9 39.3 125.6 40.5 129.1 41.8 132.5 43.3 135.9 44.8 139.2 46.4 142.2 48.2 144.8 49.7 148 51.3 151.6 53.8 151.6 53.8 152.4 54.4 153.4 54 153.8 53.8 155.6 52.8 155.9 52.7 156.5 52.3 156 51.8 156 51.8L156 51.8Z" id="Path1" fill="#009945"/></g><path d="M54.9 31C53.1 31.5 51.4 32.1 49.8 32.7 48.1 33.3 46.5 34 45 34.8 43.7 35.4 42.5 36.1 41.4 36.8 40.7 37.5 42 37.7 42 37.7 42 37.7 57.3 41.7 58 41.8 58.6 42 59.1 41.7 59.3 41.5 61.6 39.7 64.4 38.2 67.5 37 70.7 35.8 74.3 34.9 78.1 34.3 81.7 33.8 85.6 33.5 89.7 33.5 93.3 33.5 97.1 33.8 101 34.3 101.3 34.3 101.8 34.3 101.5 33.6 101.2 32.9 100.1 30.4 99.9 30.1 99.7 29.7 99.5 29.5 98.9 29.4 95.8 28.9 92.7 28.5 89.7 28.3 86.3 28 83 27.9 79.8 27.8 76.4 27.8 73.2 27.9 70 28.2 69.3 28.2 68.6 28.3 67.9 28.4 65.3 28.7 62.8 29.1 60.4 29.6 58.6 30 56.8 30.4 55.1 30.9Z" id="Fill-1" fill="#83BB26"/><g><path d="M117.5 65.1C114.5 65.1 110.1 66.6 108.6 69.6 107.1 66.6 102.7 65.1 99.7 65.1L89.3 65.1C80.4 65.1 74.4 71 74.4 81.4L74.4 111.1C74.4 115.6 77.5 117 80.3 117 83.1 117 86.2 115.5 86.2 111.1L86.2 81.4C86.2 79.9 86.2 76.9 89.2 76.9L99.6 76.9C102.6 76.9 102.6 79.9 102.6 81.4L102.6 111.1C102.6 115.6 105.6 117 108.5 117 111.4 117 114.4 115.5 114.4 111.1L114.4 81.4C114.4 79.9 114.4 76.9 117.4 76.9L127.8 76.9C130.8 76.9 130.8 79.9 130.8 81.4L130.8 111.1C130.8 115.6 133.8 117 136.9 117 140 117 142.7 115.5 142.7 111.1L142.7 81.4C142.7 69.5 136.8 65.1 127.8 65.1L117.4 65.1Z" id="Path2" fill="#FFFFFF"/><path d="M200.7 65.1 191.8 65.1C188.8 65.1 187.3 66.6 187.3 66.6L187.3 47.3C187.3 44.3 185.8 44.3 184.3 45 182.8 45.8 178.3 48 176.9 48.8 175.4 49.7 175.4 50.2 175.4 51.7L175.4 111.1C175.4 115.6 178.2 117 181.2 117 184.2 117 185.8 114 185.8 114 187.3 115.5 188.9 117 191.7 117L200.6 117C210.3 117 215.5 112.3 215.5 102.1L215.5 78.3C215.5 67.9 209.6 64.9 200.6 64.9ZM203.7 100.7C203.7 103.7 202.2 105.2 199.2 105.2L191.8 105.2C188.8 105.2 187.3 103.7 187.3 100.7L187.3 81.4C187.3 78.4 188.8 76.9 191.8 76.9L199.2 76.9C202.2 76.9 203.7 78.4 203.7 81.4L203.7 100.7Z" fill="#FFFFFF"/><path d="M165.1 61.8C165.1 58.8 163.6 58.8 162.1 59.5 160.6 60.3 156.1 62.5 154.7 63.3 153.2 64.2 153.2 64.7 153.2 66.2 153.2 67.7 153.2 111.3 153.2 111.1 153.2 115.6 156.3 117 159.3 117 162.3 117 165.1 115.5 165.1 111.1L165.1 61.8Z" fill="#FFFFFF"/></g></g></svg></div>
+    <div class="tag">Twelve months later</div>
+    <h2>What good looks like</h2>
+    <p class="lede" style="color:var(--on-dark-muted)">A privacy function that strengthens trust, improves decisions and makes responsible innovation easier.</p>
+    <div class="outcomes">
+      <div class="outcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6"/></svg><h3>Leadership ownership</h3><p>Leaders understand and own privacy risk. Material risks are visible.</p></div>
+      <div class="outcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6"/></svg><h3>Controls that work</h3><p>Assurance and MI evidence effectiveness, residual risk and trends.</p></div>
+      <div class="outcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6"/></svg><h3>Faster, safer change</h3><p>Early triage and reusable guardrails cut late-stage friction.</p></div>
+      <div class="outcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6"/></svg><h3>A trusted, capable team</h3><p>Domain owners, trusted advice, and a DPO who isn’t the bottleneck.</p></div>
+      <div class="outcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m7.5 12.5 3 3 6-6"/></svg><h3>Regulatory confidence</h3><p>Incidents, rights and investigations handled openly, with evidence.</p></div>
+    </div>
+    <p class="finale">Accelerating to Zero depends on data. My role is to help MIB use it <span>boldly, responsibly and with confidence.</span></p>
+  </div>
+</section>
+
+</main>
+
+<div class="controls">
+  <button id="prev" aria-label="Previous section">←</button>
+  <button id="next" aria-label="Next section">→</button>
+  <button id="fs" class="hint" aria-label="Toggle full screen">Full screen</button>
+</div>
+
+<script>
+(function(){
+  const root=document.documentElement;
+  const rail=document.querySelector('.rail');
+  const mob=document.querySelector('.mobile-progress');
+  const stops=[...document.querySelectorAll('[data-label]')];
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Milestones on the road
+  const marks=stops.map((el,i)=>{
+    const b=document.createElement('button');
+    b.className='milestone';
+    b.type='button';
+    b.innerHTML=(el.dataset.short||'●')+'<span class="tip">'+el.dataset.label+'</span>';
+    b.setAttribute('aria-label','Go to '+el.dataset.label);
+    b.addEventListener('click',()=>go(i));
+    if(i>0) rail.appendChild(b);
+    return b;
+  });
+
+  function docMax(){return Math.max(1,document.documentElement.scrollHeight-innerHeight)}
+  function placeMarks(){
+    const max=docMax();
+    stops.forEach((el,i)=>{ if(i===0) return; const p=Math.min(1,el.offsetTop/max); marks[i].style.top=(4+p*92)+'%'; });
+  }
+  function current(){
+    const y=scrollY+innerHeight*0.35; let c=0;
+    stops.forEach((el,i)=>{ if(el.offsetTop<=y) c=i; });
+    if(scrollY>=docMax()-4) c=stops.length-1;
+    return c;
+  }
+  let ticking=false;
+  function update(){
+    ticking=false;
+    const p=scrollY/docMax();
+    const pct=(4+p*92)+'%';
+    rail.style.setProperty('--prog',pct);
+    rail.style.setProperty('--dash',(-scrollY*0.6)+'px');
+    if(mob) mob.style.setProperty('--prog',(p*100)+'%');
+    const c=current();
+    marks.forEach((m,i)=>{ m.classList.toggle('current',i===c); m.classList.toggle('passed',i<c); });
+  }
+  addEventListener('scroll',()=>{ if(!ticking){ticking=true;requestAnimationFrame(update);} },{passive:true});
+  addEventListener('resize',()=>{placeMarks();update();});
+  addEventListener('load',()=>{placeMarks();update();});
+  placeMarks();update();
+
+  function go(i){
+    i=Math.max(0,Math.min(stops.length-1,i));
+    const top=i===0?0:stops[i].offsetTop;
+    scrollTo({top,behavior:reduce?'auto':'smooth'});
+  }
+  function step(d){ go(current()+d); }
+  document.getElementById('prev').onclick=()=>step(-1);
+  document.getElementById('next').onclick=()=>step(1);
+  addEventListener('keydown',e=>{
+    if(e.target.closest('button')&&(e.key===' '||e.key==='Enter')) return;
+    if(['ArrowRight','PageDown'].includes(e.key)||(e.key===' '&&!e.shiftKey)){e.preventDefault();step(1);}
+    else if(['ArrowLeft','PageUp'].includes(e.key)||(e.key===' '&&e.shiftKey)){e.preventDefault();step(-1);}
+    else if(e.key==='Home'){e.preventDefault();go(0);}
+    else if(e.key==='End'){e.preventDefault();go(stops.length-1);}
+    else if(e.key==='f'||e.key==='F'){toggleFs();}
+  });
+  function toggleFs(){
+    try{
+      if(!document.fullscreenElement) document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+      else document.exitFullscreen&&document.exitFullscreen();
+    }catch(err){}
+  }
+  document.getElementById('fs').onclick=toggleFs;
+
+  // Chevron flows light up in sequence
+  const flows=document.querySelectorAll('.flow');
+  if(reduce||!('IntersectionObserver' in window)){ flows.forEach(f=>f.classList.add('lit')); }
+  else{
+    flows.forEach(f=>f.classList.add('armed'));
+    const io=new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting){en.target.classList.remove('armed');en.target.classList.add('lit');io.unobserve(en.target);} }),{threshold:.6});
+    flows.forEach(f=>io.observe(f));
+  }
+
+  // Maturity lenses
+  const lenses=[...document.querySelectorAll('.lens')];
+  const detail=document.querySelector('.lens-detail');
+  function pick(l){ lenses.forEach(x=>x.setAttribute('aria-pressed',x===l?'true':'false')); detail.innerHTML=l.dataset.d; }
+  lenses.forEach(l=>l.addEventListener('click',()=>pick(l)));
+  pick(lenses[0]);
+
+  // Innovation agenda
+  const agenda=[...document.querySelectorAll('.agenda button')];
+  const stepEls=[...document.querySelectorAll('.steps li')];
+  agenda.forEach(btn=>btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')!=='true';
+    agenda.forEach(b=>{ b.setAttribute('aria-expanded','false'); b.nextElementSibling.classList.remove('open'); });
+    stepEls.forEach(s=>s.classList.remove('hot'));
+    if(open){
+      btn.setAttribute('aria-expanded','true'); btn.nextElementSibling.classList.add('open');
+      btn.dataset.steps.split(',').forEach(n=>{ const s=stepEls[+n-1]; if(s) s.classList.add('hot'); });
+    }
+  }));
+})();
+</script>
+</body>
+</html>
